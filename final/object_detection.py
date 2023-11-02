@@ -14,34 +14,36 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--img_src', help="Path to image source", required=True)
     parser.add_argument('--yolo_path', help="Path to Yolo directory", required=True)
     parser.add_argument('--save_dir', help="Path to directory where cropped images will be saved", required=True)
+    parser.add_argument('--name', help="Name of the image", required=True)
     parser.add_argument('--yaml_src', help="Path to YAML file containing the entity names")
-    parser.add_argument('--detect_run_path', help="Path to Yolo run results directory")
     parser.add_argument('--class_names', help="Path to the YAML file containing class names", required=True)
 
     return parser.parse_args()
 
 
-def detect(yolo_path: str, img_src: str, weights: str):
+def detect(yolo_path: str, img_src: str, weights: str, save_dir: str, name: str):
     """Given a source image, detect objects present in it
         using YoloV5 and the given weights"""
 
     # run command to detect
     subprocess.run(["python",
-                    f"{yolo_path}",
+                    f"{yolo_path}/detect.py",
                     f"--source={img_src}",
                     f"--weights={weights}",
                     "--conf-thres=0.25",
-                    "--save-txt"])
+                    "--save-txt",
+                    f"--project={save_dir}",
+                    f"--name={name}"])
 
 
-def crop_and_save(detect_run_path: str, img_src: str, save_dir: str, yaml_src: str):
+def crop_and_save(name: str, img_src: str, save_dir: str, yaml_src: str):
     """Crop the detected image and save all entities present in their own directory"""
 
     # Directories
-    root_dir = detect_run_path
+    root_dir = os.path.join(save_dir, name)
     labels_dir = os.path.join(root_dir, "labels")
     images_dir = img_src
-    cropped_dir = save_dir
+    cropped_dir = os.path.join(root_dir, "cropped")
 
     # Load class names from the data.yaml file
     with open(yaml_src, 'r') as f:
@@ -105,16 +107,15 @@ def crop_and_save(detect_run_path: str, img_src: str, save_dir: str, yaml_src: s
                 cv2.imwrite(save_path, cropped_image)
 
 
-
 def main():
     # get arguments
     args = get_args()
 
     # detect objects in the given image
-    detect(args.yolo_path, args.img_src, args.weights)
+    detect(args.yolo_path, args.img_src, args.weights, args.save_dir, args.name)
 
     # crop image and save each present entity in its own directory
-    crop_and_save(args.detect_run_path, args.img_src, args.save_dir, args.yaml_src)
+    crop_and_save(args.name, args.img_src, args.save_dir, args.yaml_src)
 
 
 if __name__ == '__main__':
