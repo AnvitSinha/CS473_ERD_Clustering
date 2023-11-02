@@ -69,8 +69,8 @@ def create_txt(arr: list, file_path: str):
     """Put the text representation of the list into the given file"""
 
     with open(file_path, 'a') as fp:
-        for x in arr:
-            fp.write(str(x) + '\n')
+
+        fp.write(repr(arr) + '\n')
 
 
 def main():
