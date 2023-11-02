@@ -1,3 +1,7 @@
 easyocr==1.7.1
 jupyter==1.0.0
 tensorflow==2.14.0
+roboflow
+pyyaml
+nltk
+editdistance
