@@ -35,7 +35,7 @@ def detect(yolo_path: str, img_src: str, weights: str, save_dir: str, name: str)
                     f"--name={name}"])
 
 
-def crop_and_save(name: str, save_dir: str, yaml_src: str):
+def crop_and_save(name: str, save_dir: str, yaml_src: str, img_src: str):
     """Crop the detected image and save all entities present in their own directory"""
 
     # Directories
@@ -61,7 +61,7 @@ def crop_and_save(name: str, save_dir: str, yaml_src: str):
 
         # get the corresponding image for each label map
         image_name = filename.replace('.txt', '.png')
-        image_path = os.path.join(root_dir, image_name)
+        image_path = img_src
         image = cv2.imread(image_path)
 
         if image is None:  # Check if image is loaded correctly
@@ -113,7 +113,7 @@ def main():
     detect(args.yolo_path, args.img_src, args.weights, args.save_dir, args.name)
 
     # crop image and save each present entity in its own directory
-    crop_and_save(args.name, args.save_dir, args.yaml_src)
+    crop_and_save(args.name, args.save_dir, args.yaml_src, args.img_src)
 
 
 if __name__ == '__main__':
