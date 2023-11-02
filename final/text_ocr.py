@@ -81,7 +81,7 @@ def get_text(img_path: str) -> list:
 def create_txt(arr: list, file_path: str):
     """Put the text representation of the list into the given file"""
 
-    with open(file_path, 'w') as fp:
+    with open(file_path, 'a') as fp:
         for x in arr:
             fp.write(str(x) + '\n')
 
