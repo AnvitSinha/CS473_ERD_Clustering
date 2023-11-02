@@ -15,7 +15,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--yolo_path', help="Path to Yolo directory", required=True)
     parser.add_argument('--save_dir', help="Path to directory where cropped images will be saved", required=True)
     parser.add_argument('--name', help="Name of the image", required=True)
-    parser.add_argument('--yaml_src', help="Path to YAML file containing the entity names")
+    parser.add_argument('--yaml_src', help="Path to YAML file containing the entity names", required=True)
     parser.add_argument('--class_names', help="Path to the YAML file containing class names", required=True)
 
     return parser.parse_args()
