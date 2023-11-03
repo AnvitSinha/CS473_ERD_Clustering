@@ -45,20 +45,8 @@ def get_text(img_path: str, object_type: str) -> list:
     if not object_type == "entity":
         return arr
 
-    i = 2
-    while arr[i:].count("PK") >= 1:
-
-        if arr[i] != "PK":
-            # swap
-            arr[i], arr[i+1] = arr[i+1], arr[i]
-
-        j = i+1
-        while arr[j] != "PK":
-
-            
-
-    # if PK wasn't read before its corresponding column name, swap
-    if object_type == "entity" and arr[2] != "PK":
+    # deal with PK issue for 1 PK
+    if arr[2] != "PK":
         arr[2], arr[3] = arr[3], arr[2]
 
     return arr
