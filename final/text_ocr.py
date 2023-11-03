@@ -42,11 +42,16 @@ def get_text(img_path: str, object_type: str) -> list:
     # add all terms in to the array
     arr.extend(all_lines)
 
-    # objects that aren't entity or weak_entity don't have out of order PK issue
-    if not object_type == "entity" or not object_type == "weak_entity":
-        return arr
+    if object_type in {"ident_rel", "rel", "rel_attr"}:
 
-    # deal with PK issue for 1 PK
+        # if the words of these objects somehow got split
+        if len(arr) > 2:
+            return [arr[0], " ".join([x.strip() for x in arr[1:]])]
+
+        else:
+            return arr
+    
+    # deal with PK issue for 1 PK in entity and weak entity
     if arr[2] != "PK":
         arr[2], arr[3] = arr[3], arr[2]
 
@@ -57,7 +62,6 @@ def create_txt(arr: list, file_path: str):
     """Put the text representation of the list into the given file"""
 
     with open(file_path, 'a') as fp:
-
         fp.write(repr(arr) + '\n')
 
 
