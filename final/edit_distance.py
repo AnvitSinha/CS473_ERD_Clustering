@@ -20,11 +20,12 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--objects_file', help="Path to the file containing the objects for the image", required=True)
     parser.add_argument('--question_path', help="Path to the file containing the question", required=True)
     parser.add_argument('--output_file', help="Path to file where the output should be created", required=True)
+    parser.add_argument('--threshold', help="Threshold for edi distance", required=True)
 
     return parser.parse_args()
 
 
-def read_object_file(objects_file: str) -> list[list[str]]:
+def read_objects_file(objects_file: str) -> list[list[str]]:
     """Given the path to the file with the detected objects,
         read the information into an array and return it"""
 
@@ -89,8 +90,21 @@ def create_txt(all_lines: list[list[str]], file_path: str):
 
 
 def main():
-    print(__file__)
 
+    # get args
+    args = get_args()
+
+    # get all lines from the objects file
+    all_lines = read_objects_file(args.objects_file)
+
+    # get the vocab from the question
+    vocabulary = process_question(args.question_path)
+
+    # update all_lines based on edit distance threshold
+    update(all_lines, vocabulary, args.threshold)
+
+    # write result to file
+    create_txt(all_lines, args.output_file)
 
 if __name__ == '__main__':
     main()
