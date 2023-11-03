@@ -42,7 +42,8 @@ def get_text(img_path: str, object_type: str) -> list:
     # add all terms in to the array
     arr.extend(all_lines)
 
-    if not object_type == "entity":
+    # objects that aren't entity or weak_entity don't have out of order PK issue
+    if not object_type == "entity" or not object_type == "weak_entity":
         return arr
 
     # deal with PK issue for 1 PK
