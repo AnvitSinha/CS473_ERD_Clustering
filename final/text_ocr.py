@@ -42,27 +42,11 @@ def get_text(img_path: str, object_type: str) -> list:
     # add all terms in to the array
     arr.extend(all_lines)
 
-    val = arr.count('PK')
-    if val != 1:
-        return arr
+    # if PK wasn't read before its corresponding column name, swap
+    if arr[2] != "PK":
+        arr[2], arr[3] = arr[3], arr[2]
 
-    arr2 = list()
-    idx = arr.index('PK')
-
-    # if idx != 1:
-    substring = list(arr[1:idx])  # 1 item
-    substring2 = list(arr[idx + 1:])  # everything after PK
-    arr2.append(arr[0])  # title
-    arr2.append(arr[1])  # adding PK
-    arr2.append(arr[idx])
-
-    for item in substring:
-        arr2.append(item)
-
-    for item in substring2:
-        arr2.append(item)
-
-    return arr2
+    return arr
 
 
 def create_txt(arr: list, file_path: str):
