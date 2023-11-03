@@ -69,7 +69,17 @@ def update(all_lines: list[list[str]], vocabulary: set[str], threshold: int):
 
     for i, lines in enumerate(all_lines):
         for j, word in enumerate(lines):
+
+            # skip ERD objects
+            if word in {"entity", "weak_entity", "ident_rel", "rel", "rel_attr"}:
+                continue
+
             for vocab in vocabulary:
+
+                # PK should not be changed
+                if word == "PK":
+                    continue
+
                 if ed.eval(word.lower(), vocab) <= threshold:
                     all_lines[i][j] = vocab
                     break
