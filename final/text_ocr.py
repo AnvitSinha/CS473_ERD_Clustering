@@ -43,7 +43,7 @@ def get_text(img_path: str, object_type: str) -> list:
     arr.extend(all_lines)
 
     # if PK wasn't read before its corresponding column name, swap
-    if arr[2] != "PK":
+    if object_type == "entity" and arr[2] != "PK":
         arr[2], arr[3] = arr[3], arr[2]
 
     return arr
