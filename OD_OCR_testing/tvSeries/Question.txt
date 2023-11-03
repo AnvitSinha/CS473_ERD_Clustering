@@ -1,8 +1,0 @@
-There are TV series, which have names, networks and production companies, and are identified by the name and network.
-A TV series has one or more seasons, which are identified by the number of the season. A season also has the number of episodes and the year the season starts. No season can exist without a corresponding series.
-A season has one or more episodes, identified by episode number, which is unique within the season. Each episode also has a title and a length. No episode can exist without a corresponding season.
-An actor is identified by name and birth date, and also has a nationality.
-A writer is also identified by name and birth date, and has a talent agency that represents him or her.
-An actor can appear as a “regular” on a TV series or a guest star on an episode.
-An episode has one or more writers. A writer can write one or more
-episodes.
