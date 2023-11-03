@@ -1,8 +1,9 @@
-import cv2
-import yaml
+import argparse
 import os
 import subprocess
-import argparse
+
+import cv2
+import yaml
 
 
 def get_args() -> argparse.Namespace:

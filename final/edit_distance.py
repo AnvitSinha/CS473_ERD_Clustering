@@ -1,11 +1,11 @@
 import argparse
+
 import editdistance as ed
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
 ps = PorterStemmer()
-import string
 
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -90,7 +90,6 @@ def create_txt(all_lines: list[list[str]], file_path: str):
 
 
 def main():
-
     # get args
     args = get_args()
 
@@ -105,6 +104,7 @@ def main():
 
     # write result to file
     create_txt(all_lines, args.output_file)
+
 
 if __name__ == '__main__':
     main()
