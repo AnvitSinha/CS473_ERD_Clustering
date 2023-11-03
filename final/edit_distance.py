@@ -1,4 +1,5 @@
 import argparse
+import string
 
 import editdistance as ed
 import nltk
@@ -20,7 +21,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--objects_file', help="Path to the file containing the objects for the image", required=True)
     parser.add_argument('--question_path', help="Path to the file containing the question", required=True)
     parser.add_argument('--output_file', help="Path to file where the output should be created", required=True)
-    parser.add_argument('--threshold', help="Threshold for edi distance", required=True)
+    parser.add_argument('--threshold', type=int, help="Threshold for edi distance", required=True)
 
     return parser.parse_args()
 
