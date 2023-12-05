@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
-from collections import Counter
+import os
 
 from sklearn.cluster import KMeans
 
@@ -19,14 +19,21 @@ def get_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--words_file', help="Path to the file containing the words for the images", required=True)
+    parser.add_argument('--dataset_dir', help="Path to directory containing all image information for the dataset"
+                        , required=True)
     parser.add_argument('--output_file', help="Path to file where the output should be created", required=True)
     parser.add_argument('--num_clusters', type=int, help="Number of expected clusters", required=True)
 
     return parser.parse_args()
 
 
-def get_word_lists(input_file: str) -> list[list[str]]:
+def get_image_names(dataset_dir: str) -> list[str]:
+    """Get the names of all images in the dataset"""
+
+    return os.listdir(dataset_dir)
+
+
+def get_word_lists(dataset_dir: str) -> list[list[str]]:
     """Get the list of lists each of which represents an image.
         Removes all stopwords and stems the words"""
 
@@ -34,13 +41,19 @@ def get_word_lists(input_file: str) -> list[list[str]]:
 
     stop_words = set(stopwords.words('english'))
 
-    with open(input_file, "r") as inp:
-        for lines in inp:
-            # add the lowercase version of every non-stop word after stemming
-            all_img_words.append(
-                [ps.stem(w.lower().strip().strip("'")) for w in lines.replace('[', '').replace(']', '').split(',')
-                 if w.lower().strip().strip("'") not in stop_words]
-            )
+    for input_file in os.listdir(dataset_dir):
+
+        curr_img_words = []
+
+        with open(input_file, "r") as inp:
+            for lines in inp:
+                # add the lowercase version of every non-stop word after stemming
+                curr_img_words.extend(
+                    [ps.stem(w.lower().strip().strip("'")) for w in lines.replace('[', '').replace(']', '').split(',')
+                     if w.lower().strip().strip("'") not in stop_words]
+                )
+
+        all_img_words.append(curr_img_words)
 
     return all_img_words
 
@@ -69,7 +82,7 @@ def get_clusters(tf_matrix: pd.DataFrame, num_clusters: int) -> list[int]:
         NOTE: The cluster assignments get added to the dataframe so pass a copy
         if the input tf_matrix should not be modified"""
 
-    kmeans = KMeans(n_clusters=3, init='k-means++')
+    kmeans = KMeans(n_clusters=num_clusters, init='k-means++')
     kmeans.fit(tf_matrix)
     tf_matrix['cluster'] = kmeans.labels_  # also add to the dataframe
 
@@ -90,7 +103,24 @@ def write_output(output_file: str, img_names: list[str], clusters: list[int]):
 
 
 def main():
-    print(__file__)
+
+    # get all arguments
+    args = get_args()
+
+    # get the names of all images
+    img_names = get_image_names(args.dataset_dir)
+
+    # get all the words in the dataset, separated by image
+    all_words = get_word_lists(args.dataset_dir)
+
+    # get the tf matrix
+    tf_matrix = get_tf_matrix(all_words)
+
+    # compute clusters
+    clusters = get_clusters(tf_matrix, args.num_clusters)
+
+    # write to file
+    write_output(args.output_file, img_names, clusters)
 
 
 if __name__ == '__main__':
