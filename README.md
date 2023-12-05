@@ -8,7 +8,7 @@
 * Srikar Lanka
 * Vinh Tran
 
-The `CS473_Project_colab.ipynb` file in the repository is set up so that all the cells in the notebook can be run 
+The `CS473_Project_Colab.ipynb` file in the repository is set up so that all the cells in the notebook can be run 
 sequentially to generate the desired output in the zip folder with the name hintonians.zip.
 
 The notebook clones this repo and sets up the files as per the default Configurations settings.

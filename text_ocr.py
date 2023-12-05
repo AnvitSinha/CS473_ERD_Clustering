@@ -11,6 +11,8 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--img_path', help="Path to the image to extract text from", required=True)
     parser.add_argument('--save_dir', help="Path to the directory where all text files are to be saved", required=True)
     parser.add_argument('--object_type', help="Type of the ERD object currently being processed", required=True)
+    parser.add_argument('--include_entity', help="True if the name of the entity is to be included",
+                        required=False, type=bool, default=True)
 
     return parser.parse_args()
 
@@ -30,15 +32,15 @@ def extract_lines(img_path: str) -> list:
     return extracted_lines
 
 
-def get_text(img_path: str, object_type: str) -> list:
+def get_text(img_path: str, object_type: str, include_entity: bool) -> list:
     """Take in the path to an image and append all texts present in it
         to a list based on the kind of ERD object it is"""
 
     # get all lines present in the image
     all_lines = extract_lines(img_path)
 
-    # array to return, initialise to the type of entity
-    arr = [object_type]
+    # array to return, initialise to the type of entity if needed
+    arr = [object_type] if include_entity else []
 
     # add all terms in to the array
     arr.extend(all_lines)
@@ -62,7 +64,7 @@ def main():
     args = get_args()
 
     # get the array to write
-    arr = get_text(args.img_path, args.object_type)
+    arr = get_text(args.img_path, args.object_type, args.include_entity)
 
     create_txt(arr, args.save_dir)
 
