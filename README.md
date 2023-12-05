@@ -16,7 +16,7 @@ The notebook clones this repo and sets up the files as per the default Configura
 The only additional things needed are the grading.zip and the model weights zip files. 
 
 The zip file for the model weights can be downloaded from:<br>
-`https://purdue0-my.sharepoint.com/:f:/g/personal/sinha102_purdue_edu/EjeivgmR47xGvWgRJ0X_XF8BmcOoDrERSjFBJgiv691rPw?e=kYcbZs`
+`https://purdue0-my.sharepoint.com/:f:/g/personal/sinha102_purdue_edu/EjeivgmR47xGvWgRJ0X_XF8BPwuSHlF2Gks0xfilKclXaw?e=t1OR5f`
 <br>This link is only valid till 12/22/2023.
 
 The grading.zip file to be used for grading is expected to follow the structure 
