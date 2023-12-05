@@ -63,6 +63,32 @@ def get_tf_matrix(words_list: list[list[str]]) -> pd.DataFrame:
     return pd.DataFrame(bow_tf)
 
 
+def get_clusters(tf_matrix: pd.DataFrame, num_clusters: int) -> list[int]:
+    """Get the clustering of each image as a list where the index in the clusterings
+        corresponds to the row index in the tf_matrix.
+        NOTE: The cluster assignments get added to the dataframe so pass a copy
+        if the input tf_matrix should not be modified"""
+
+    kmeans = KMeans(n_clusters=3, init='k-means++')
+    kmeans.fit(tf_matrix)
+    tf_matrix['cluster'] = kmeans.labels_  # also add to the dataframe
+
+    return kmeans.labels_
+
+
+def write_output(output_file: str, img_names: list[str], clusters: list[int]):
+    """Write to the output file the cluster assignments for each image name
+        where each line in the output file corresponds to a cluster"""
+
+    all_lines = [[] for _ in range(max(clusters) + 1)]  # create empty list for each cluster
+
+    for i in range(len(img_names)):
+        all_lines[clusters[i]].append(img_names[i])
+
+    with open(output_file, 'w') as out:
+        out.write("\n".join([" ".join(line) for line in all_lines]))
+
+
 def main():
     print(__file__)
 
