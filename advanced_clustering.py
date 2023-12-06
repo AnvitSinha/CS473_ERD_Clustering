@@ -21,24 +21,16 @@ from sklearn.preprocessing import normalize
 warnings.filterwarnings('ignore')
 nltk.download('stopwords', quiet=True)
 
-# Weights for clustering
-# Weights for clustering
-# TEXT_REL_WEIGHT = 0.1
-# TEXT_IDENT_REL_WEIGHT = 0.1
-# TEXT_REL_ATTR_WEIGHT = 10.0
-# NUM_ENTITY_WEIGHT = 0.1
-# NUM_WEAK_ENTITY_WEIGHT = 10.0
-# NUM_REL_WEIGHT = 1.0
-# NUM_IDENT_REL_WEIGHT = 0.1
-# NUM_REL_ATTR_WEIGHT = 0.1
-TEXT_REL_WEIGHT = 0.1
-TEXT_IDENT_REL_WEIGHT = 0.1
-TEXT_REL_ATTR_WEIGHT = 10.0
-NUM_ENTITY_WEIGHT = 0.883991316691379
-NUM_WEAK_ENTITY_WEIGHT = 1.4291398850822417
-NUM_REL_WEIGHT = 3.575283911426867
-NUM_IDENT_REL_WEIGHT = 1.5902492310944798
-NUM_REL_ATTR_WEIGHT = 1.893584848442421
+# Weights for clustering - Pretrained values
+
+TEXT_REL_ATTR_WEIGHT = 2
+TEXT_ENTITY_WEIGHT = 6
+
+NUM_ENTITY_WEIGHT = -0.1
+NUM_WEAK_ENTITY_WEIGHT = 3.234449513138848
+NUM_REL_WEIGHT = 4.9
+NUM_IDENT_REL_WEIGHT = 1.3727992175194168
+NUM_REL_ATTR_WEIGHT = 4.6
 
 
 def get_args() -> argparse.Namespace:
@@ -54,12 +46,6 @@ def get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_image_names(dataset_dir: str) -> list[str]:
-    """Get the names of all images in the dataset"""
-
-    return os.listdir(dataset_dir)
-
-
 def create_dataset_json(dataset_dir: str) -> list[dict]:
     """Creates the list of dictionaries that represents each image in the dataset"""
 
@@ -73,18 +59,18 @@ def create_dataset_json(dataset_dir: str) -> list[dict]:
             all_lines = [[w.strip().strip("'") for w in line.split(",") if w.strip().strip("'") != "PK"]
                          for line in all_lines]
 
-        img_erds.append(process_input_file(all_lines))
+        img_erds.append(process_input_file(all_lines, input_file))
 
     return img_erds
 
 
-def process_input_file(all_lines: list[list[str]]) -> dict:
+def process_input_file(all_lines: list[list[str]], name: str) -> dict:
     """Helper function to create a description of the image with its properties
         gathered from the input file that calls this function"""
 
     # intialize the dictionary
     img_desc = {
-        'num_entity': len(all_lines),
+        'num_entity': 0,
         'num_weak_entity': 0,
         'num_rel': 0,
         'num_ident_rel': 0,
@@ -93,7 +79,8 @@ def process_input_file(all_lines: list[list[str]]) -> dict:
         'weak_entity': [],
         'rel': [],
         'ident_rel': [],
-        'rel_attr': []
+        'rel_attr': [],
+        'name': name
     }
 
     for line in all_lines:
@@ -143,42 +130,37 @@ def contains_non_empty_strings(arr):
     return any(s.strip() for s in arr)
 
 
-def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
+def get_clusters(img_erds: list[dict], num_clusters: int) -> tuple[list[int], list[str]]:
     """Get the clustering of each image as a list where the index in the clusterings
         corresponds to an image"""
 
-    all_text_rel = []
-    all_text_ident_rel = []
     all_text_rel_attr = []
     all_text_entity = []
-    all_text_weak_entity = []
+    # all_text_weak_entity = []
 
     for erd in img_erds:
-        all_text_rel.append(preprocess_text(' '.join(erd['rel'])))
-        all_text_ident_rel.append(preprocess_text(' '.join(erd['ident_rel'])))
+
         all_text_rel_attr.append(preprocess_text(' '.join(erd['rel_attr'])))
-        all_text_entity.append(preprocess_text(' '.join(erd['entity'])))
-        all_text_weak_entity.append(preprocess_text(' '.join(erd['weak_entity'])))
-
-    # Vectorize and cluster with updated weights
-    if contains_non_empty_strings(all_text_rel):
-        vectorized_text_rel = vectorize_text_data(all_text_rel, TEXT_REL_WEIGHT)
-    else:
-        vectorized_text_rel = np.array([])
-
-    if contains_non_empty_strings(all_text_ident_rel):
-        vectorized_text_ident_rel = vectorize_text_data(all_text_ident_rel, TEXT_IDENT_REL_WEIGHT)
-    else:
-        vectorized_text_ident_rel = np.array([])
+        all_text_entity.append(preprocess_text(' '.join(erd['entity']) + ' '.join(erd['weak_entity'])))
+        # all_text_weak_entity.append(preprocess_text(' '.join(erd['weak_entity'])))
 
     if contains_non_empty_strings(all_text_rel_attr):
         vectorized_text_rel_attr = vectorize_text_data(all_text_rel_attr, TEXT_REL_ATTR_WEIGHT)
     else:
         vectorized_text_rel_attr = np.array([])
 
-    # Combine the vectors
+    if contains_non_empty_strings(all_text_entity):
+        vectorized_text_entity = vectorize_text_data(all_text_entity, TEXT_ENTITY_WEIGHT)
+    else:
+        vectorized_text_entity = np.array([])
+
+    # if contains_non_empty_strings(all_text_weak_entity):
+    #     vectorized_text_weak_entity = vectorize_text_data(all_text_weak_entity, TEXT_ENTITY_WEIGHT)
+    # else:
+    #     vectorized_text_weak_entity = np.array([])
+
     combined_vectors = [v for v in
-                        [vectorized_text_rel, vectorized_text_ident_rel, vectorized_text_rel_attr]
+                        [vectorized_text_rel_attr, vectorized_text_entity]
                         if v.size > 0]
 
     combined_text_features = np.hstack(combined_vectors) if combined_vectors else np.array([])
@@ -196,13 +178,22 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
     )
 
     features = np.hstack((weighted_numerical_features, combined_text_features))
+
+    # Standardize the features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(features)
+
+    # Apply PCA to reduce dimensionality
+    pca = PCA(n_components=0.95)  # Retain 95% of variance
+    X_pca = pca.fit_transform(X_scaled)
+
     # features = np.hstack(weighted_numerical_features)
 
     # Use Agglomerative cluster assignments as initial centroids for K-Means
     kmeans = KMeans(n_clusters=num_clusters, init="k-means++", n_init=100)
-    kmeans.fit(features)
+    kmeans.fit(X_pca)
 
-    return kmeans.labels_
+    return kmeans.labels_, [erd['name'] for erd in img_erds]
 
 
 def write_output(output_file: str, img_names: list[str], clusters: list[int]):
@@ -222,9 +213,6 @@ def main():
     # get args
     args = get_args()
 
-    # get image names
-    img_names = get_image_names(args.dataset_dir)
-
     # get image dataset as dictionary
     img_erds = create_dataset_json(args.dataset_dir)
 
@@ -232,7 +220,7 @@ def main():
     clusters = get_clusters(img_erds, args.num_clusters)
 
     # write output
-    write_output(args.output_file, img_names, clusters)
+    write_output(args.output_file, clusters[1], clusters[0])
 
 
 if __name__ == '__main__':
