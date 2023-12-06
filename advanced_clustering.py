@@ -22,14 +22,23 @@ warnings.filterwarnings('ignore')
 nltk.download('stopwords', quiet=True)
 
 # Weights for clustering
+# Weights for clustering
+# TEXT_REL_WEIGHT = 0.1
+# TEXT_IDENT_REL_WEIGHT = 0.1
+# TEXT_REL_ATTR_WEIGHT = 10.0
+# NUM_ENTITY_WEIGHT = 0.1
+# NUM_WEAK_ENTITY_WEIGHT = 10.0
+# NUM_REL_WEIGHT = 1.0
+# NUM_IDENT_REL_WEIGHT = 0.1
+# NUM_REL_ATTR_WEIGHT = 0.1
 TEXT_REL_WEIGHT = 0.1
 TEXT_IDENT_REL_WEIGHT = 0.1
 TEXT_REL_ATTR_WEIGHT = 10.0
-NUM_ENTITY_WEIGHT = 0.1
-NUM_WEAK_ENTITY_WEIGHT = 10.0
-NUM_REL_WEIGHT = 1.0
-NUM_IDENT_REL_WEIGHT = 0.1
-NUM_REL_ATTR_WEIGHT = 0.1
+NUM_ENTITY_WEIGHT = 0.883991316691379
+NUM_WEAK_ENTITY_WEIGHT = 1.4291398850822417
+NUM_REL_WEIGHT = 3.575283911426867
+NUM_IDENT_REL_WEIGHT = 1.5902492310944798
+NUM_REL_ATTR_WEIGHT = 1.893584848442421
 
 
 def get_args() -> argparse.Namespace:
@@ -148,8 +157,8 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
         all_text_rel.append(preprocess_text(' '.join(erd['rel'])))
         all_text_ident_rel.append(preprocess_text(' '.join(erd['ident_rel'])))
         all_text_rel_attr.append(preprocess_text(' '.join(erd['rel_attr'])))
-        all_text_rel_attr.append(preprocess_text(' '.join(erd['entity'])))
-        all_text_rel_attr.append(preprocess_text(' '.join(erd['weak_entity'])))
+        all_text_entity.append(preprocess_text(' '.join(erd['entity'])))
+        all_text_weak_entity.append(preprocess_text(' '.join(erd['weak_entity'])))
 
     # Vectorize and cluster with updated weights
     if contains_non_empty_strings(all_text_rel):
@@ -175,7 +184,7 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
     combined_text_features = np.hstack(combined_vectors) if combined_vectors else np.array([])
 
     numerical_features = np.array(
-        [[erd['num_entities'], erd['num_weak_entities'], erd['num_rel'], erd['num_ident_rel'], erd['num_rel_attr']]
+        [[erd['num_entity'], erd['num_weak_entity'], erd['num_rel'], erd['num_ident_rel'], erd['num_rel_attr']]
          for erd in img_erds]
     )
 
@@ -187,6 +196,7 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
     )
 
     features = np.hstack((weighted_numerical_features, combined_text_features))
+    # features = np.hstack(weighted_numerical_features)
 
     # Use Agglomerative cluster assignments as initial centroids for K-Means
     kmeans = KMeans(n_clusters=num_clusters, init="k-means++", n_init=100)
