@@ -99,7 +99,7 @@ def write_output(output_file: str, img_names: list[str], clusters: list[int]):
         all_lines[clusters[i]].append(img_names[i].rstrip(".txt"))
 
     with open(output_file, 'w') as out:
-        out.write("\n".join([" ".join(line) for line in all_lines]))
+        out.write("\n".join([", ".join(line) for line in all_lines]))
 
 
 def main():

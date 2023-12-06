@@ -1,21 +1,16 @@
 import argparse
 import os
-import numpy as np
 import warnings
 
 import nltk
-from nltk.stem import PorterStemmer
+import numpy as np
 from nltk.corpus import stopwords
-
-from sklearn.cluster import KMeans
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.feature_extraction.text import CountVectorizer
+from nltk.stem import PorterStemmer
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics.cluster import rand_score
-
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from sklearn.cluster import KMeans, MiniBatchKMeans
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.preprocessing import normalize
 
 warnings.filterwarnings('ignore')
@@ -23,14 +18,14 @@ nltk.download('stopwords', quiet=True)
 
 # Weights for clustering - Pretrained values
 
-TEXT_REL_ATTR_WEIGHT = 2
-TEXT_ENTITY_WEIGHT = 6
+TEXT_REL_ATTR_WEIGHT = 1.4500000000000004
+TEXT_ENTITY_WEIGHT = 0.7499999999999998
 
-NUM_ENTITY_WEIGHT = -0.1
-NUM_WEAK_ENTITY_WEIGHT = 3.234449513138848
-NUM_REL_WEIGHT = 4.9
-NUM_IDENT_REL_WEIGHT = 1.3727992175194168
-NUM_REL_ATTR_WEIGHT = 4.6
+NUM_ENTITY_WEIGHT = -0.5499999999999999
+NUM_WEAK_ENTITY_WEIGHT = 3.284449513138848
+NUM_REL_WEIGHT = 4.75
+NUM_IDENT_REL_WEIGHT = 1.4227992175194168
+NUM_REL_ATTR_WEIGHT = 5.649999999999998
 
 
 def get_args() -> argparse.Namespace:
@@ -130,19 +125,16 @@ def contains_non_empty_strings(arr):
     return any(s.strip() for s in arr)
 
 
-def get_clusters(img_erds: list[dict], num_clusters: int) -> tuple[list[int], list[str]]:
+def get_clusters(img_erds: list[dict], num_clusters: int) -> list[dict]:
     """Get the clustering of each image as a list where the index in the clusterings
         corresponds to an image"""
 
     all_text_rel_attr = []
     all_text_entity = []
-    # all_text_weak_entity = []
 
     for erd in img_erds:
-
         all_text_rel_attr.append(preprocess_text(' '.join(erd['rel_attr'])))
         all_text_entity.append(preprocess_text(' '.join(erd['entity']) + ' '.join(erd['weak_entity'])))
-        # all_text_weak_entity.append(preprocess_text(' '.join(erd['weak_entity'])))
 
     if contains_non_empty_strings(all_text_rel_attr):
         vectorized_text_rel_attr = vectorize_text_data(all_text_rel_attr, TEXT_REL_ATTR_WEIGHT)
@@ -153,11 +145,6 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> tuple[list[int], li
         vectorized_text_entity = vectorize_text_data(all_text_entity, TEXT_ENTITY_WEIGHT)
     else:
         vectorized_text_entity = np.array([])
-
-    # if contains_non_empty_strings(all_text_weak_entity):
-    #     vectorized_text_weak_entity = vectorize_text_data(all_text_weak_entity, TEXT_ENTITY_WEIGHT)
-    # else:
-    #     vectorized_text_weak_entity = np.array([])
 
     combined_vectors = [v for v in
                         [vectorized_text_rel_attr, vectorized_text_entity]
@@ -179,21 +166,16 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> tuple[list[int], li
 
     features = np.hstack((weighted_numerical_features, combined_text_features))
 
-    # Standardize the features
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(features)
-
-    # Apply PCA to reduce dimensionality
-    pca = PCA(n_components=0.95)  # Retain 95% of variance
-    X_pca = pca.fit_transform(X_scaled)
-
-    # features = np.hstack(weighted_numerical_features)
-
-    # Use Agglomerative cluster assignments as initial centroids for K-Means
     kmeans = KMeans(n_clusters=num_clusters, init="k-means++", n_init=100)
-    kmeans.fit(X_pca)
+    kmeans.fit(features)
+    kmeans_cluster_assignments = kmeans.labels_
 
-    return kmeans.labels_, [erd['name'] for erd in img_erds]
+    for i, img_desc in enumerate(img_erds):
+        img_desc['cluster_label'] = kmeans_cluster_assignments[i]
+
+    print(kmeans_cluster_assignments)
+
+    return img_erds
 
 
 def write_output(output_file: str, img_names: list[str], clusters: list[int]):
@@ -206,7 +188,7 @@ def write_output(output_file: str, img_names: list[str], clusters: list[int]):
         all_lines[clusters[i]].append(img_names[i].rstrip(".txt"))
 
     with open(output_file, 'w') as out:
-        out.write("\n".join([" ".join(line) for line in all_lines]))
+        out.write("\n".join([", ".join(line) for line in all_lines]))
 
 
 def main():
@@ -217,10 +199,10 @@ def main():
     img_erds = create_dataset_json(args.dataset_dir)
 
     # get clusterings
-    clusters = get_clusters(img_erds, args.num_clusters)
+    cluster_erds = get_clusters(img_erds, args.num_clusters)
 
     # write output
-    write_output(args.output_file, clusters[1], clusters[0])
+    write_output(args.output_file, [i['name'] for i in cluster_erds], [i['cluster_label'] for i in cluster_erds])
 
 
 if __name__ == '__main__':
