@@ -12,7 +12,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--save_dir', help="Path to the directory where all text files are to be saved", required=True)
     parser.add_argument('--object_type', help="Type of the ERD object currently being processed", required=True)
     parser.add_argument('--include_entity', help="True if the name of the entity is to be included",
-                        required=False, type=bool, default=True)
+                        required=False, type=int, default=1)
 
     return parser.parse_args()
 
@@ -45,7 +45,7 @@ def get_text(img_path: str, object_type: str, include_entity: bool) -> list:
     # add all terms in to the array
     arr.extend(all_lines)
 
-    if object_type in {"ident_rel", "rel", "rel_attr"} and len(arr) > 2:
+    if include_entity and object_type in {"ident_rel", "rel", "rel_attr"} and len(arr) > 2:
         # if the words of these objects somehow got split
         return [arr[0], " ".join([x.strip() for x in arr[1:]])]
 

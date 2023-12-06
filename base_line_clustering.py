@@ -45,7 +45,7 @@ def get_word_lists(dataset_dir: str) -> list[list[str]]:
 
         curr_img_words = []
 
-        with open(input_file, "r") as inp:
+        with open(os.path.join(dataset_dir, input_file), "r") as inp:
             for lines in inp:
                 # add the lowercase version of every non-stop word after stemming
                 curr_img_words.extend(
@@ -96,7 +96,7 @@ def write_output(output_file: str, img_names: list[str], clusters: list[int]):
     all_lines = [[] for _ in range(max(clusters) + 1)]  # create empty list for each cluster
 
     for i in range(len(img_names)):
-        all_lines[clusters[i]].append(img_names[i])
+        all_lines[clusters[i]].append(img_names[i].rstrip(".txt"))
 
     with open(output_file, 'w') as out:
         out.write("\n".join([" ".join(line) for line in all_lines]))
