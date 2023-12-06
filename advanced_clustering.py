@@ -21,7 +21,6 @@ from sklearn.preprocessing import normalize
 warnings.filterwarnings('ignore')
 nltk.download('stopwords', quiet=True)
 
-
 # Weights for clustering
 TEXT_REL_WEIGHT = 0.1
 TEXT_IDENT_REL_WEIGHT = 0.1
@@ -58,16 +57,61 @@ def create_dataset_json(dataset_dir: str) -> list[dict]:
     img_erds = []
 
     for input_file in os.listdir(dataset_dir):
-
-        curr_img = dict()
-
         with open(os.path.join(dataset_dir, input_file), "r") as inp:
+            all_lines = [w.strip().replace('[', '').replace(']', '') for w in inp.readlines()]
 
-            for line in inp:
-                # get just the strings in the line
-                curr_line = [w.strip().strip("'") for w in line.replace('[', '').replace(']', '').split(',')]
+            # remove the quotes from each word and remove PK if found since that is not needed
+            all_lines = [[w.strip().strip("'") for w in line.split(",") if w.strip().strip("'") != "PK"]
+                         for line in all_lines]
 
-    return list(dict())
+        img_erds.append(process_input_file(all_lines))
+
+    return img_erds
+
+
+def process_input_file(all_lines: list[list[str]]) -> dict:
+    """Helper function to create a description of the image with its properties
+        gathered from the input file that calls this function"""
+
+    # intialize the dictionary
+    img_desc = {
+        'num_entity': len(all_lines),
+        'num_weak_entity': 0,
+        'num_rel': 0,
+        'num_ident_rel': 0,
+        'num_rel_attr': 0,
+        'entity': [],
+        'weak_entity': [],
+        'rel': [],
+        'ident_rel': [],
+        'rel_attr': []
+    }
+
+    for line in all_lines:
+
+        # process each object
+
+        if line[0] == "entity":
+            img_desc['num_entity'] += 1
+            img_desc['entity'].extend(line[1:])
+
+        elif line[0] == "weak_entity":
+            img_desc['num_weak_entity'] += 1
+            img_desc['weak_entity'].extend(line[1:])
+
+        elif line[0] == "rel":
+            img_desc['num_rel'] += 1
+            img_desc['rel'].extend(line[1:])
+
+        elif line[0] == "rel_attr":
+            img_desc['num_rel_attr'] += 1
+            img_desc['rel_attr'].extend(line[1:])
+
+        elif line[0] == "ident_rel":
+            img_desc['num_ident_rel'] += 1
+            img_desc['ident_rel'].extend(line[1:])
+
+    return img_desc
 
 
 def preprocess_text(text):
@@ -112,12 +156,12 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
         vectorized_text_rel = vectorize_text_data(all_text_rel, TEXT_REL_WEIGHT)
     else:
         vectorized_text_rel = np.array([])
-        
+
     if contains_non_empty_strings(all_text_ident_rel):
         vectorized_text_ident_rel = vectorize_text_data(all_text_ident_rel, TEXT_IDENT_REL_WEIGHT)
     else:
         vectorized_text_ident_rel = np.array([])
-        
+
     if contains_non_empty_strings(all_text_rel_attr):
         vectorized_text_rel_attr = vectorize_text_data(all_text_rel_attr, TEXT_REL_ATTR_WEIGHT)
     else:
@@ -151,8 +195,34 @@ def get_clusters(img_erds: list[dict], num_clusters: int) -> list[int]:
     return kmeans.labels_
 
 
+def write_output(output_file: str, img_names: list[str], clusters: list[int]):
+    """Write to the output file the cluster assignments for each image name
+        where each line in the output file corresponds to a cluster"""
+
+    all_lines = [[] for _ in range(max(clusters) + 1)]  # create empty list for each cluster
+
+    for i in range(len(img_names)):
+        all_lines[clusters[i]].append(img_names[i].rstrip(".txt"))
+
+    with open(output_file, 'w') as out:
+        out.write("\n".join([" ".join(line) for line in all_lines]))
+
+
 def main():
-    print(__file__)
+    # get args
+    args = get_args()
+
+    # get image names
+    img_names = get_image_names(args.dataset_dir)
+
+    # get image dataset as dictionary
+    img_erds = create_dataset_json(args.dataset_dir)
+
+    # get clusterings
+    clusters = get_clusters(img_erds, args.num_clusters)
+
+    # write output
+    write_output(args.output_file, img_names, clusters)
 
 
 if __name__ == '__main__':
